@@ -34,9 +34,21 @@ rpc.exports = {
 """
 
 
+def find_or_spawn_pid(device: frida.core.Device, pkg: str) -> int:
+    for app in device.enumerate_applications():
+        if app.identifier == pkg and app.pid > 0:
+            return app.pid
+    pid = device.spawn([pkg])
+    device.resume(pid)
+    import time
+    time.sleep(2.0)
+    return pid
+
+
 def main():
     device = frida.get_usb_device(timeout=10)
-    session = device.attach(PKG)
+    pid = find_or_spawn_pid(device, PKG)
+    session = device.attach(pid)
     script = session.create_script(JS_CODE)
     script.load()
 
